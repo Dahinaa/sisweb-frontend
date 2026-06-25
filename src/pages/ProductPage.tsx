@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Category, Product } from "my-types";
-import { getAllProducts } from "../api/productapi";
+import { deleteProduct, getAllProducts } from "../api/productapi";
 import { getAllCategories } from "../api/categoryapi";
 
 function ProductPage() {
@@ -11,6 +11,7 @@ function ProductPage() {
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,6 +51,30 @@ function ProductPage() {
       return matchesSearch && matchesCategory;
     });
   }, [products, searchTerm, selectedCategoryId]);
+
+  const handleDeleteProduct = async (id: number) => {
+    const confirmDelete = window.confirm(
+      "¿Seguro que quieres eliminar este producto?"
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      setDeletingId(id);
+      await deleteProduct(id);
+
+      setProducts((currentProducts) =>
+        currentProducts.filter((product) => product.id !== id)
+      );
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo eliminar el producto.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -154,6 +179,15 @@ function ProductPage() {
               <p className="mt-2 text-sm text-gray-500">
                 Categoría: {product.category?.name ?? "Sin categoría"}
               </p>
+
+              <button
+                type="button"
+                onClick={() => handleDeleteProduct(product.id)}
+                disabled={deletingId === product.id}
+                className="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+              >
+                {deletingId === product.id ? "Eliminando..." : "Eliminar"}
+              </button>
             </article>
           ))}
         </section>
