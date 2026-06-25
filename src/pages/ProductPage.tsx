@@ -1,46 +1,55 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Product } from "my-types";
+import type { Category, Product } from "my-types";
 import { getAllProducts } from "../api/productapi";
+import { getAllCategories } from "../api/categoryapi";
 
 function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
 
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadData = async () => {
       try {
-        const data = await getAllProducts();
-        setProducts(data);
+        const productsData = await getAllProducts();
+        const categoriesData = await getAllCategories();
+
+        setProducts(productsData);
+        setCategories(categoriesData);
       } catch (err) {
         console.error(err);
-        setError("No se pudieron cargar los productos.");
+        setError("No se pudieron cargar los productos o categorías.");
       } finally {
         setLoading(false);
       }
     };
 
-    loadProducts();
+    loadData();
   }, []);
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = searchTerm.toLowerCase().trim();
 
-    if (!normalizedSearch) {
-      return products;
-    }
-
     return products.filter((product) => {
       const title = product.title.toLowerCase();
       const description = product.description.toLowerCase();
 
-      return (
+      const matchesSearch =
+        !normalizedSearch ||
         title.includes(normalizedSearch) ||
-        description.includes(normalizedSearch)
-      );
+        description.includes(normalizedSearch);
+
+      const matchesCategory =
+        selectedCategoryId === "all" ||
+        product.categoryId === Number(selectedCategoryId);
+
+      return matchesSearch && matchesCategory;
     });
-  }, [products, searchTerm]);
+  }, [products, searchTerm, selectedCategoryId]);
 
   if (loading) {
     return (
@@ -64,26 +73,56 @@ function ProductPage() {
     <main className="p-8">
       <h1 className="mb-6 text-3xl font-bold">Productos</h1>
 
-      <div className="mb-6">
-        <label
-          htmlFor="search"
-          className="mb-2 block text-sm font-medium text-gray-700"
-        >
-          Buscar producto
-        </label>
+      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div>
+          <label
+            htmlFor="search"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Buscar producto
+          </label>
 
-        <input
-          id="search"
-          type="text"
-          value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Buscar por título o descripción..."
-          className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-        />
-      </div>
+          <input
+            id="search"
+            type="text"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar por título o descripción..."
+            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="category"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Filtrar por categoría
+          </label>
+
+          <select
+            id="category"
+            value={selectedCategoryId}
+            onChange={(event) => setSelectedCategoryId(event.target.value)}
+            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+          >
+            <option value="all">Todas las categorías</option>
+
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      <p className="mb-4 text-sm text-gray-500">
+        Mostrando {filteredProducts.length} producto(s)
+      </p>
 
       {filteredProducts.length === 0 ? (
-        <p>No hay productos que coincidan con la búsqueda.</p>
+        <p>No hay productos que coincidan con los filtros.</p>
       ) : (
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredProducts.map((product) => (
