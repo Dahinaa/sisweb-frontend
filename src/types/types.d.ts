@@ -15,4 +15,14 @@ declare module "my-types" {
     categoryId: number;
     category: Category;
   }
+
+  export interface NewProductInput {
+    title: string;
+    description: string;
+    price: number;
+    discountPercentage: number;
+    rating: number;
+    stock: number;
+    categoryId: number;
+  }
 }

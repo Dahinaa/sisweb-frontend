@@ -68,6 +68,12 @@ const ProductPage: React.FC = () => {
     });
   };
 
+  const goToEditProduct = (product: Product) => {
+    navigate(`/products/${product.id}/edit`, {
+      state: { product },
+    });
+  };
+
   const filteredProducts = useMemo(() => {
     const _title = titleQuery.trim().toLowerCase();
     const _description = descriptionQuery.trim().toLowerCase();
@@ -304,7 +310,7 @@ const ProductPage: React.FC = () => {
                       {/* Edit */}
                       <td className="px-3 py-3 text-center">
                         <button
-                          onClick={() => setProductToView(product)}
+                          onClick={() => goToEditProduct(product)}
                           className="text-blue-600 hover:text-blue-800"
                         >
                           <PencilIcon className="h-4 w-4" />
@@ -332,7 +338,11 @@ const ProductPage: React.FC = () => {
       <ProductDetailModal
         product={productToView}
         onClose={() => setProductToView(null)}
-        onEdit={() => {}}
+        onEdit={() => {
+          if (productToView) {
+            goToEditProduct(productToView);
+          }
+        }}
       />
 
       <DeleteConfirmModal
