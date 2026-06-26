@@ -21,11 +21,19 @@ export const createProduct = async (
   data: NewProductInput
 ): Promise<Product> => {
   try {
+    console.log("Creating product with data:", data);
+
     const res = await api.post<ApiResponse<Product>>("/product", data);
+
+    console.log("Product created response:", res.data);
+
     return res.data.payload;
   } catch (error) {
     const err = error as AxiosError;
+
     console.error("Error creating product:", err.message);
+    console.error("Backend response:", err.response?.data);
+
     throw err;
   }
 };
@@ -39,7 +47,10 @@ export const updateProduct = async (
     return res.data.payload;
   } catch (error) {
     const err = error as AxiosError;
+
     console.error("Error updating product:", err.message);
+    console.error("Backend response:", err.response?.data);
+
     throw err;
   }
 };

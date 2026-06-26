@@ -33,23 +33,42 @@ const ProductFormPage: React.FC = () => {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<NewProductInput>(emptyForm);
+  const [loadingCategories, setLoadingCategories] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
-    getAllCategories().then(setCategories);
+    getAllCategories()
+      .then((categoriesData: Category[]) => {
+        setCategories(categoriesData);
 
-    if (isEditing && location.state?.product) {
-      const product = location.state.product as Product;
+        if (!isEditing && categoriesData.length > 0) {
+          setForm((prev) => ({
+            ...prev,
+            categoryId: categoriesData[0].id,
+          }));
+        }
 
-      setForm({
-        title: product.title,
-        description: product.description,
-        price: product.price,
-        discountPercentage: product.discountPercentage,
-        rating: product.rating,
-        stock: product.stock,
-        categoryId: product.categoryId,
+        if (isEditing && location.state?.product) {
+          const product = location.state.product as Product;
+
+          setForm({
+            title: product.title,
+            description: product.description,
+            price: product.price,
+            discountPercentage: product.discountPercentage,
+            rating: product.rating,
+            stock: product.stock,
+            categoryId: product.categoryId,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error loading categories:", error);
+        alert("No se pudieron cargar las categorías.");
+      })
+      .finally(() => {
+        setLoadingCategories(false);
       });
-    }
   }, []);
 
   const handleChange = (
@@ -59,13 +78,43 @@ const ProductFormPage: React.FC = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (isEditing) {
-      updateProduct(Number(id), form).then(() => navigate("/products"));
-    } else {
-      createProduct(form).then(() => navigate("/products"));
+    console.log("Form submitted:", form);
+
+    if (!form.title.trim()) {
+      alert("El título es obligatorio.");
+      return;
+    }
+
+    if (!form.description.trim()) {
+      alert("La descripción es obligatoria.");
+      return;
+    }
+
+    if (form.categoryId === 0) {
+      alert("Selecciona una categoría.");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      if (isEditing) {
+        await updateProduct(Number(id), form);
+      } else {
+        await createProduct(form);
+      }
+
+      navigate("/products");
+    } catch (error) {
+      console.error("Error saving product:", error);
+      alert(
+        "No se pudo guardar el producto. Revisa la consola del navegador y la terminal del backend."
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -186,21 +235,29 @@ const ProductFormPage: React.FC = () => {
 
                 <select
                   className={inputClass}
-                  value={form.categoryId || ""}
+                  value={form.categoryId}
                   onChange={(event) =>
                     handleChange(
                       "categoryId",
                       parseInt(event.target.value) || 0
                     )
                   }
+                  disabled={loadingCategories || categories.length === 0}
                 >
-                  <option value="">Select a category</option>
+                  {loadingCategories && (
+                    <option value={0}>Loading categories...</option>
+                  )}
 
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
+                  {!loadingCategories && categories.length === 0 && (
+                    <option value={0}>No categories found</option>
+                  )}
+
+                  {!loadingCategories &&
+                    categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
@@ -218,17 +275,18 @@ const ProductFormPage: React.FC = () => {
 
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+              disabled={isSaving || categories.length === 0}
+              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
             >
               {isEditing ? (
                 <>
                   <PencilSquareIcon className="h-4 w-4" />
-                  Update Product
+                  {isSaving ? "Saving..." : "Save Changes"}
                 </>
               ) : (
                 <>
                   <PlusIcon className="h-4 w-4" />
-                  Save Product
+                  {isSaving ? "Saving..." : "Save Product"}
                 </>
               )}
             </button>

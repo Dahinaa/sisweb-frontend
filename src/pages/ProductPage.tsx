@@ -34,43 +34,24 @@ const SortIcon = ({ className }: { className?: string }) => (
 
 const ProductPage: React.FC = () => {
   const navigate = useNavigate();
-
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-
   const [titleQuery, setTitleQuery] = useState("");
   const [descriptionQuery, setDescriptionQuery] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
-
-  const [productToView, setProductToView] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToView, setProductToView] = useState<Product | null>(null);
 
   useEffect(() => {
-    getAllProducts().then((products: Product[]) => {
-      setProducts(products);
-      console.log(products);
-    });
-
-    getAllCategories().then((categories: Category[]) => {
-      setCategories(categories);
-    });
+    getAllProducts().then((products: Product[]) => setProducts(products));
+    getAllCategories().then((categories: Category[]) => setCategories(categories));
   }, []);
 
   const handleDelete = () => {
     if (!productToDelete) return;
-
     deleteProduct(productToDelete.id).then(() => {
-      setProducts((prev) =>
-        prev.filter((product) => product.id !== productToDelete.id)
-      );
-
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
       setProductToDelete(null);
-    });
-  };
-
-  const goToEditProduct = (product: Product) => {
-    navigate(`/products/${product.id}/edit`, {
-      state: { product },
     });
   };
 
@@ -78,16 +59,16 @@ const ProductPage: React.FC = () => {
     const _title = titleQuery.trim().toLowerCase();
     const _description = descriptionQuery.trim().toLowerCase();
 
-    return products.filter((product) => {
+    return products.filter((p) => {
       const matchesTitle =
-        _title.length === 0 || product.title.toLowerCase().includes(_title);
+        _title.length === 0 || p.title.toLowerCase().includes(_title);
 
       const matchesDescription =
         _description.length === 0 ||
-        product.description.toLowerCase().includes(_description);
+        p.description.toLowerCase().includes(_description);
 
       const matchesCategory =
-        categoryId === null || product.category?.id === categoryId;
+        categoryId === null || p.category?.id === categoryId;
 
       return matchesTitle && matchesDescription && matchesCategory;
     });
@@ -99,7 +80,6 @@ const ProductPage: React.FC = () => {
         {/* Header */}
         <div className="border-b border-blue-200 bg-blue-50 px-4 py-3 flex items-center gap-2">
           <ShoppingCartIcon className="h-4 w-4 text-blue-700" />
-
           <p className="text-sm font-semibold text-blue-900">All Products</p>
         </div>
 
@@ -112,13 +92,12 @@ const ProductPage: React.FC = () => {
               <label className="block text-xs font-medium text-gray-600">
                 Title
               </label>
-
               <input
                 className="mt-1 w-40 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 type="text"
                 placeholder="Title"
                 value={titleQuery}
-                onChange={(event) => setTitleQuery(event.target.value)}
+                onChange={(e) => setTitleQuery(e.target.value)}
               />
             </div>
 
@@ -126,13 +105,12 @@ const ProductPage: React.FC = () => {
               <label className="block text-xs font-medium text-gray-600">
                 Description
               </label>
-
               <input
                 className="mt-1 w-40 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 type="text"
                 placeholder="Description"
                 value={descriptionQuery}
-                onChange={(event) => setDescriptionQuery(event.target.value)}
+                onChange={(e) => setDescriptionQuery(e.target.value)}
               />
             </div>
 
@@ -140,29 +118,21 @@ const ProductPage: React.FC = () => {
               <label className="block text-xs font-medium text-gray-600">
                 Category
               </label>
-
               <select
                 className="mt-1 w-40 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 value={categoryId ?? ""}
-                onChange={(event) =>
-                  setCategoryId(
-                    event.target.value === ""
-                      ? null
-                      : Number(event.target.value)
-                  )
+                onChange={(e) =>
+                  setCategoryId(e.target.value === "" ? null : Number(e.target.value))
                 }
               >
                 <option value="">All categories</option>
-
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
                   </option>
                 ))}
               </select>
             </div>
-
-            <div />
           </div>
         </div>
 
@@ -170,7 +140,6 @@ const ProductPage: React.FC = () => {
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-sm font-semibold text-gray-900">Results</h2>
-
             <button
               onClick={() => navigate("/products/new")}
               className="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
@@ -185,68 +154,50 @@ const ProductPage: React.FC = () => {
                 <tr className="border-b border-gray-200">
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      #
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      # <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     Image
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      Title
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      Title <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      Description
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      Description <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      Category
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      Category <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      Price
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      Price <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      Disc.%
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      Disc.% <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      Rating
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      Rating <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     <span className="flex items-center gap-1">
-                      Stock
-                      <SortIcon className="h-4 w-4 text-gray-400" />
+                      Stock <SortIcon className="h-4 w-4 text-gray-400" />
                     </span>
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     Modify
                   </th>
-
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     Delete
                   </th>
@@ -288,29 +239,26 @@ const ProductPage: React.FC = () => {
                       </td>
 
                       <td className="px-3 py-3 text-sm text-gray-600">
-                        {product.category?.name}
+                        {product.category?.name ?? "—"}
                       </td>
 
                       <td className="px-3 py-3 text-gray-700">
                         {product.price.toFixed(2)}
                       </td>
-
                       <td className="px-3 py-3 text-gray-700">
                         {product.discountPercentage.toFixed(1)}%
                       </td>
-
-                      <td className="px-3 py-3 text-gray-700">
-                        {product.rating}
-                      </td>
-
-                      <td className="px-3 py-3 text-gray-700">
-                        {product.stock}
-                      </td>
+                      <td className="px-3 py-3 text-gray-700">{product.rating}</td>
+                      <td className="px-3 py-3 text-gray-700">{product.stock}</td>
 
                       {/* Edit */}
                       <td className="px-3 py-3 text-center">
                         <button
-                          onClick={() => goToEditProduct(product)}
+                          onClick={() =>
+                            navigate(`/products/${product.id}/edit`, {
+                              state: { product },
+                            })
+                          }
                           className="text-blue-600 hover:text-blue-800"
                         >
                           <PencilIcon className="h-4 w-4" />
@@ -339,9 +287,10 @@ const ProductPage: React.FC = () => {
         product={productToView}
         onClose={() => setProductToView(null)}
         onEdit={() => {
-          if (productToView) {
-            goToEditProduct(productToView);
-          }
+          navigate(`/products/${productToView?.id}/edit`, {
+            state: { product: productToView },
+          });
+          setProductToView(null);
         }}
       />
 

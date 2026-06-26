@@ -8,33 +8,27 @@ interface Props {
   onConfirm: () => void;
 }
 
-const DeleteConfirmModal: React.FC<Props> = ({
-  product,
-  onClose,
-  onConfirm,
-}) => {
+const DeleteConfirmModal: React.FC<Props> = ({ product, onClose, onConfirm }) => {
   return (
     <Dialog open={product !== null} onClose={onClose} className="relative z-50">
+      {/* Overlay */}
       <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
 
+      {/* Centered panel */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl space-y-4">
+        <DialogPanel className="w-full max-w-sm rounded-lg bg-white shadow-xl p-6 space-y-4">
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
               <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
             </div>
-
             <div>
               <DialogTitle className="text-sm font-semibold text-gray-900">
                 Eliminar producto
               </DialogTitle>
-
               <p className="mt-1 text-sm text-gray-600">
                 ¿Estás seguro de que deseas eliminar{" "}
-                <span className="font-medium text-gray-900">
-                  "{product?.title}"
-                </span>
-                ? Esta acción no se puede deshacer.
+                <span className="font-medium text-gray-900">"{product?.title}"</span>?
+                Esta acción no se puede deshacer.
               </p>
             </div>
           </div>
@@ -42,14 +36,13 @@ const DeleteConfirmModal: React.FC<Props> = ({
           <div className="flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               Cancelar
             </button>
-
             <button
               onClick={onConfirm}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700"
+              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/30"
             >
               Eliminar
             </button>

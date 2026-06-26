@@ -1,9 +1,5 @@
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
-import {
-  PencilIcon,
-  PhotoIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { XMarkIcon, PencilIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import type { Product } from "my-types";
 
 interface Props {
@@ -19,79 +15,66 @@ interface FieldProps {
 
 const Field: React.FC<FieldProps> = ({ label, value }) => (
   <div>
-    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-      {label}
-    </p>
+    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
     <p className="mt-1 text-sm text-gray-900">{value}</p>
   </div>
 );
 
-const ProductDetailModal: React.FC<Props> = ({
-  product,
-  onClose,
-  onEdit,
-}) => {
+const ProductDetailModal: React.FC<Props> = ({ product, onClose, onEdit }) => {
   return (
     <Dialog open={product !== null} onClose={onClose} className="relative z-50">
-      {/* Overlay oscuro */}
+      {/* Overlay */}
       <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
 
-      {/* Panel centrado */}
+      {/* Centered panel */}
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-lg rounded-lg bg-white shadow-xl">
+        <DialogPanel className="w-full max-w-lg rounded-lg bg-white shadow-xl flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <DialogTitle className="text-sm font-semibold text-gray-900">
-              Product detail
+            <DialogTitle className="text-base font-semibold text-gray-900">
+              Product Details
             </DialogTitle>
-
-            <button
-              onClick={onClose}
-              className="rounded-md text-gray-400 hover:text-gray-600"
-            >
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
 
           {/* Body */}
-          <div className="px-6 py-5">
-            <div className="mb-5 flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
+          <div className="px-6 py-5 space-y-5">
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg bg-gray-100 border border-gray-200">
                 <PhotoIcon className="h-8 w-8 text-gray-400" />
               </div>
-
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {product?.title}
-                </h3>
-
-                <p className="mt-1 text-sm text-gray-600">
-                  {product?.description}
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Title
                 </p>
+                <p className="text-base font-semibold text-gray-900">{product?.title}</p>
+                <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                  {product?.category?.name ?? "—"}
+                </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-              <Field
-                label="Category"
-                value={product?.category?.name ?? "No category"}
-              />
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Description
+              </p>
+              <p className="mt-1 text-sm text-gray-900 leading-relaxed">
+                {product?.description}
+              </p>
+            </div>
 
-              <Field
-                label="Price"
-                value={`$${product?.price?.toFixed(2) ?? "0.00"}`}
-              />
-
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-t border-gray-100 pt-4">
+              <Field label="Price" value={`$${product?.price.toFixed(2)}`} />
+              <Field label="Stock" value={String(product?.stock)} />
               <Field
                 label="Discount"
-                value={`${product?.discountPercentage?.toFixed(1) ?? "0.0"}%`}
+                value={`${product?.discountPercentage.toFixed(1)}%`}
               />
-
-              <Field label="Rating" value={String(product?.rating ?? "")} />
-
-              <Field label="Stock" value={String(product?.stock ?? "")} />
-
-              <Field label="ID" value={String(product?.id ?? "")} />
+              <Field label="Rating" value={`${product?.rating} / 5`} />
+              <Field label="Category ID" value={String(product?.categoryId)} />
+              <Field label="Product ID" value={String(product?.id)} />
             </div>
           </div>
 
@@ -99,14 +82,13 @@ const ProductDetailModal: React.FC<Props> = ({
           <div className="flex justify-end gap-2 border-t border-gray-200 px-6 py-4">
             <button
               onClick={onClose}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
             >
               Close
             </button>
-
             <button
               onClick={onEdit}
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
             >
               <PencilIcon className="h-4 w-4" />
               Edit
