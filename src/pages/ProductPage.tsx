@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Category, Product } from "my-types";
 import { deleteProduct, getAllProducts } from "../api/productapi";
 import { getAllCategories } from "../api/categoryapi";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 
 function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -11,7 +12,10 @@ function ProductPage() {
 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -52,27 +56,41 @@ function ProductPage() {
     });
   }, [products, searchTerm, selectedCategoryId]);
 
-  const handleDeleteProduct = async (id: number) => {
-    const confirmDelete = window.confirm(
-      "¿Seguro que quieres eliminar este producto?"
-    );
+  const openDeleteModal = (product: Product) => {
+    setSelectedProduct(product);
+    setIsDeleteModalOpen(true);
+  };
 
-    if (!confirmDelete) {
+  const closeDeleteModal = () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setSelectedProduct(null);
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedProduct) {
       return;
     }
 
     try {
-      setDeletingId(id);
-      await deleteProduct(id);
+      setIsDeleting(true);
+
+      await deleteProduct(selectedProduct.id);
 
       setProducts((currentProducts) =>
-        currentProducts.filter((product) => product.id !== id)
+        currentProducts.filter((product) => product.id !== selectedProduct.id)
       );
+
+      setSelectedProduct(null);
+      setIsDeleteModalOpen(false);
     } catch (err) {
       console.error(err);
       alert("No se pudo eliminar el producto.");
     } finally {
-      setDeletingId(null);
+      setIsDeleting(false);
     }
   };
 
@@ -182,16 +200,23 @@ function ProductPage() {
 
               <button
                 type="button"
-                onClick={() => handleDeleteProduct(product.id)}
-                disabled={deletingId === product.id}
-                className="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                onClick={() => openDeleteModal(product)}
+                className="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
               >
-                {deletingId === product.id ? "Eliminando..." : "Eliminar"}
+                Eliminar
               </button>
             </article>
           ))}
         </section>
       )}
+
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        productName={selectedProduct?.title ?? ""}
+        isDeleting={isDeleting}
+        onClose={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+      />
     </main>
   );
 }
