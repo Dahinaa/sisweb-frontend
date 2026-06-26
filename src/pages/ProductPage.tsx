@@ -1,224 +1,347 @@
+import {
+  PhotoIcon,
+  TrashIcon,
+  PencilIcon,
+  ShoppingCartIcon,
+} from "@heroicons/react/24/outline";
 import { useEffect, useMemo, useState } from "react";
-import type { Category, Product } from "my-types";
-import { deleteProduct, getAllProducts } from "../api/productapi";
+import { useNavigate } from "react-router-dom";
+import type { Product, Category } from "my-types";
+import { getAllProducts, deleteProduct } from "../api/productapi";
 import { getAllCategories } from "../api/categoryapi";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import ProductDetailModal from "../components/ProductDetailModal";
 
-function ProductPage() {
+const SortIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="m8 15 4 4 4-4m0-6-4-4-4 4"
+    />
+  </svg>
+);
+
+const ProductPage: React.FC = () => {
+  const navigate = useNavigate();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>("");
 
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("all");
+  const [titleQuery, setTitleQuery] = useState("");
+  const [descriptionQuery, setDescriptionQuery] = useState("");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [productToView, setProductToView] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const productsData = await getAllProducts();
-        const categoriesData = await getAllCategories();
+    getAllProducts().then((products: Product[]) => {
+      setProducts(products);
+      console.log(products);
+    });
 
-        setProducts(productsData);
-        setCategories(categoriesData);
-      } catch (err) {
-        console.error(err);
-        setError("No se pudieron cargar los productos o categorías.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+    getAllCategories().then((categories: Category[]) => {
+      setCategories(categories);
+    });
   }, []);
 
-  const filteredProducts = useMemo(() => {
-    const normalizedSearch = searchTerm.toLowerCase().trim();
+  const handleDelete = () => {
+    if (!productToDelete) return;
 
-    return products.filter((product) => {
-      const title = product.title.toLowerCase();
-      const description = product.description.toLowerCase();
-
-      const matchesSearch =
-        !normalizedSearch ||
-        title.includes(normalizedSearch) ||
-        description.includes(normalizedSearch);
-
-      const matchesCategory =
-        selectedCategoryId === "all" ||
-        product.categoryId === Number(selectedCategoryId);
-
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, searchTerm, selectedCategoryId]);
-
-  const openDeleteModal = (product: Product) => {
-    setSelectedProduct(product);
-    setIsDeleteModalOpen(true);
-  };
-
-  const closeDeleteModal = () => {
-    if (isDeleting) {
-      return;
-    }
-
-    setSelectedProduct(null);
-    setIsDeleteModalOpen(false);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedProduct) {
-      return;
-    }
-
-    try {
-      setIsDeleting(true);
-
-      await deleteProduct(selectedProduct.id);
-
-      setProducts((currentProducts) =>
-        currentProducts.filter((product) => product.id !== selectedProduct.id)
+    deleteProduct(productToDelete.id).then(() => {
+      setProducts((prev) =>
+        prev.filter((product) => product.id !== productToDelete.id)
       );
 
-      setSelectedProduct(null);
-      setIsDeleteModalOpen(false);
-    } catch (err) {
-      console.error(err);
-      alert("No se pudo eliminar el producto.");
-    } finally {
-      setIsDeleting(false);
-    }
+      setProductToDelete(null);
+    });
   };
 
-  if (loading) {
-    return (
-      <main className="p-8">
-        <h1 className="text-2xl font-bold">Productos</h1>
-        <p className="mt-4">Cargando productos...</p>
-      </main>
-    );
-  }
+  const filteredProducts = useMemo(() => {
+    const _title = titleQuery.trim().toLowerCase();
+    const _description = descriptionQuery.trim().toLowerCase();
 
-  if (error) {
-    return (
-      <main className="p-8">
-        <h1 className="text-2xl font-bold">Productos</h1>
-        <p className="mt-4 text-red-600">{error}</p>
-      </main>
-    );
-  }
+    return products.filter((product) => {
+      const matchesTitle =
+        _title.length === 0 || product.title.toLowerCase().includes(_title);
+
+      const matchesDescription =
+        _description.length === 0 ||
+        product.description.toLowerCase().includes(_description);
+
+      const matchesCategory =
+        categoryId === null || product.category?.id === categoryId;
+
+      return matchesTitle && matchesDescription && matchesCategory;
+    });
+  }, [descriptionQuery, titleQuery, categoryId, products]);
 
   return (
-    <main className="p-8">
-      <h1 className="mb-6 text-3xl font-bold">Productos</h1>
+    <div className="p-4">
+      <nav className="bg-white border border-gray-200 rounded-lg shadow-sm">
+        {/* Header */}
+        <div className="border-b border-blue-200 bg-blue-50 px-4 py-3 flex items-center gap-2">
+          <ShoppingCartIcon className="h-4 w-4 text-blue-700" />
 
-      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div>
-          <label
-            htmlFor="search"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            Buscar producto
-          </label>
-
-          <input
-            id="search"
-            type="text"
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Buscar por título o descripción..."
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          />
+          <p className="text-sm font-semibold text-blue-900">All Products</p>
         </div>
 
-        <div>
-          <label
-            htmlFor="category"
-            className="mb-2 block text-sm font-medium text-gray-700"
-          >
-            Filtrar por categoría
-          </label>
+        {/* Filter */}
+        <div className="px-4 py-4 space-y-3">
+          <h2 className="text-sm font-semibold text-gray-900">Filter</h2>
 
-          <select
-            id="category"
-            value={selectedCategoryId}
-            onChange={(event) => setSelectedCategoryId(event.target.value)}
-            className="w-full rounded-md border border-gray-300 px-4 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-          >
-            <option value="all">Todas las categorías</option>
+          <div className="flex flex-wrap gap-3 items-end">
+            <div>
+              <label className="block text-xs font-medium text-gray-600">
+                Title
+              </label>
 
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
+              <input
+                className="mt-1 w-40 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                type="text"
+                placeholder="Title"
+                value={titleQuery}
+                onChange={(event) => setTitleQuery(event.target.value)}
+              />
+            </div>
 
-      <p className="mb-4 text-sm text-gray-500">
-        Mostrando {filteredProducts.length} producto(s)
-      </p>
+            <div>
+              <label className="block text-xs font-medium text-gray-600">
+                Description
+              </label>
 
-      {filteredProducts.length === 0 ? (
-        <p>No hay productos que coincidan con los filtros.</p>
-      ) : (
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <article
-              key={product.id}
-              className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm"
-            >
-              <h2 className="text-xl font-semibold">{product.title}</h2>
+              <input
+                className="mt-1 w-40 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                type="text"
+                placeholder="Description"
+                value={descriptionQuery}
+                onChange={(event) => setDescriptionQuery(event.target.value)}
+              />
+            </div>
 
-              <p className="mt-2 text-gray-600">{product.description}</p>
+            <div>
+              <label className="block text-xs font-medium text-gray-600">
+                Category
+              </label>
 
-              <p className="mt-3">
-                <span className="font-semibold">Precio:</span> ${product.price}
-              </p>
-
-              <p>
-                <span className="font-semibold">Descuento:</span>{" "}
-                {product.discountPercentage}%
-              </p>
-
-              <p>
-                <span className="font-semibold">Rating:</span> {product.rating}
-              </p>
-
-              <p>
-                <span className="font-semibold">Stock:</span> {product.stock}
-              </p>
-
-              <p className="mt-2 text-sm text-gray-500">
-                Categoría: {product.category?.name ?? "Sin categoría"}
-              </p>
-
-              <button
-                type="button"
-                onClick={() => openDeleteModal(product)}
-                className="mt-4 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              <select
+                className="mt-1 w-40 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                value={categoryId ?? ""}
+                onChange={(event) =>
+                  setCategoryId(
+                    event.target.value === ""
+                      ? null
+                      : Number(event.target.value)
+                  )
+                }
               >
-                Eliminar
-              </button>
-            </article>
-          ))}
-        </section>
-      )}
+                <option value="">All categories</option>
+
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div />
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="px-4 py-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-sm font-semibold text-gray-900">Results</h2>
+
+            <button
+              onClick={() => navigate("/products/new")}
+              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            >
+              NEW PRODUCT
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-md border border-gray-200">
+            <table id="filter-table" className="min-w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600">
+                <tr className="border-b border-gray-200">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      #
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    Image
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Title
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Description
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Category
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Price
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Disc.%
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Rating
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    <span className="flex items-center gap-1">
+                      Stock
+                      <SortIcon className="h-4 w-4 text-gray-400" />
+                    </span>
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    Modify
+                  </th>
+
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    Delete
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-200">
+                {filteredProducts.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-3 py-6 text-center text-sm text-gray-500"
+                      colSpan={11}
+                    >
+                      No products found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((product, index) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-3 font-medium text-gray-900">
+                        {index + 1}
+                      </td>
+
+                      <td className="px-3 py-3 text-center text-gray-700">
+                        <PhotoIcon className="mx-auto h-4 w-4 text-gray-400" />
+                      </td>
+
+                      <td className="px-3 py-3">
+                        <button
+                          onClick={() => setProductToView(product)}
+                          className="text-blue-600 hover:underline text-sm font-medium"
+                        >
+                          {product.title}
+                        </button>
+                      </td>
+
+                      <td className="px-3 py-3 text-sm text-gray-600">
+                        {product.description}
+                      </td>
+
+                      <td className="px-3 py-3 text-sm text-gray-600">
+                        {product.category?.name}
+                      </td>
+
+                      <td className="px-3 py-3 text-gray-700">
+                        {product.price.toFixed(2)}
+                      </td>
+
+                      <td className="px-3 py-3 text-gray-700">
+                        {product.discountPercentage.toFixed(1)}%
+                      </td>
+
+                      <td className="px-3 py-3 text-gray-700">
+                        {product.rating}
+                      </td>
+
+                      <td className="px-3 py-3 text-gray-700">
+                        {product.stock}
+                      </td>
+
+                      {/* Edit */}
+                      <td className="px-3 py-3 text-center">
+                        <button
+                          onClick={() => setProductToView(product)}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      </td>
+
+                      {/* Delete */}
+                      <td className="px-3 py-3 text-center">
+                        <button
+                          onClick={() => setProductToDelete(product)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </nav>
+
+      <ProductDetailModal
+        product={productToView}
+        onClose={() => setProductToView(null)}
+        onEdit={() => {}}
+      />
 
       <DeleteConfirmModal
-        isOpen={isDeleteModalOpen}
-        productName={selectedProduct?.title ?? ""}
-        isDeleting={isDeleting}
-        onClose={closeDeleteModal}
-        onConfirm={handleConfirmDelete}
+        product={productToDelete}
+        onClose={() => setProductToDelete(null)}
+        onConfirm={handleDelete}
       />
-    </main>
+    </div>
   );
-}
+};
 
 export default ProductPage;

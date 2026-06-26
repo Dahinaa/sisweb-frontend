@@ -1,62 +1,63 @@
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import type { Product } from "my-types";
 
-interface DeleteConfirmModalProps {
-  isOpen: boolean;
-  productName: string;
-  isDeleting: boolean;
+interface Props {
+  product: Product | null;
   onClose: () => void;
   onConfirm: () => void;
 }
 
-function DeleteConfirmModal({
-  isOpen,
-  productName,
-  isDeleting,
+const DeleteConfirmModal: React.FC<Props> = ({
+  product,
   onClose,
   onConfirm,
-}: DeleteConfirmModalProps) {
+}) => {
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+    <Dialog open={product !== null} onClose={onClose} className="relative z-50">
+      <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-          <DialogTitle className="text-lg font-bold text-gray-900">
-            Confirmar eliminación
-          </DialogTitle>
+        <DialogPanel className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl space-y-4">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-red-100">
+              <ExclamationTriangleIcon className="h-5 w-5 text-red-600" />
+            </div>
 
-          <p className="mt-3 text-sm text-gray-600">
-            ¿Seguro que quieres eliminar el producto{" "}
-            <span className="font-semibold text-gray-900">{productName}</span>?
-          </p>
+            <div>
+              <DialogTitle className="text-sm font-semibold text-gray-900">
+                Eliminar producto
+              </DialogTitle>
 
-          <p className="mt-2 text-sm text-red-600">
-            Esta acción no se puede deshacer.
-          </p>
+              <p className="mt-1 text-sm text-gray-600">
+                ¿Estás seguro de que deseas eliminar{" "}
+                <span className="font-medium text-gray-900">
+                  "{product?.title}"
+                </span>
+                ? Esta acción no se puede deshacer.
+              </p>
+            </div>
+          </div>
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="flex justify-end gap-2">
             <button
-              type="button"
               onClick={onClose}
-              disabled={isDeleting}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
             >
               Cancelar
             </button>
 
             <button
-              type="button"
               onClick={onConfirm}
-              disabled={isDeleting}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-700"
             >
-              {isDeleting ? "Eliminando..." : "Eliminar"}
+              Eliminar
             </button>
           </div>
         </DialogPanel>
       </div>
     </Dialog>
   );
-}
+};
 
 export default DeleteConfirmModal;
